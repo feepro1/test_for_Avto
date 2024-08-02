@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Products</title>
+    <style>
+        .product {
+            border: 1px solid #ddd;
+            padding: 16px;
+            margin: 16px;
+        }
+        .product button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        .cart {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="products-container"></div>
+
+<div class="cart">
+    <h3>Cart</h3>
+    <ul id="cart-items"></ul>
+    <a href="checkout.html">Checkout</a>
+</div>
+
+<script>
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    async function fetchProducts() {
+        try {
+            const response = await fetch('http://localhost/api/v1/products/get-all-products');
+            const products = await response.json();
+            console.log(products);
+            displayProducts(products);
+        } catch (error) {
+            console.error('Error fetching products:', error);
+        }
+    }
+
+    function displayProducts(products) {
+        const productsContainer = document.getElementById('products-container');
+        productsContainer.innerHTML = '';
+
+        products.items.forEach(product => {
+            const productElement = document.createElement('div');
+            productElement.classList.add('product');
+            productElement.dataset.id = product.id;
+            productElement.dataset.name = product.name;
+            productElement.dataset.cost = product.cost;
+
+            productElement.innerHTML = `
+                <h3>${product.name}</h3>
+                <p>Price: $${product.cost}</p>
+                <button>Add to Cart</button>
+            `;
+
+            productElement.querySelector('button').addEventListener('click', () => {
+                addToCart(product.id, product.name, product.cost);
+            });
+
+            productsContainer.appendChild(productElement);
+        });
+    }
+
+    function addToCart(productId, productName, productCost) {
+        const existingProduct = cart.find(item => item.id === productId);
+
+        if (existingProduct) {
+            existingProduct.quantity += 1;
+        } else {
+            cart.push({ id: productId, name: productName, cost: productCost, quantity: 1 });
+        }
+
+        localStorage.setItem('cart', JSON.stringify(cart));
+        displayCart();
+    }
+
+    function displayCart() {
+        const cartItems = document.getElementById('cart-items');
+        cartItems.innerHTML = '';
+        cart.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item.name} x ${item.quantity}`;
+            cartItems.appendChild(li);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchProducts();
+        displayCart();
+    });
+</script>
+
+</body>
+</html>

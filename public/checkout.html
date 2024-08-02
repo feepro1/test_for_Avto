@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Checkout</title>
+    <style>
+        form {
+            max-width: 600px;
+            margin: auto;
+            padding: 1em;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        div {
+            margin-bottom: 1em;
+        }
+        label {
+            margin-bottom: .5em;
+            color: #333333;
+        }
+        input, textarea {
+            border: 1px solid #CCCCCC;
+            padding: .5em;
+            font-size: 1em;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 0.7em;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<form id="checkout-form">
+    <h2>Checkout</h2>
+    <div>
+        <label for="fullName">Full Name</label>
+        <input type="text" id="fullName" name="fullName" required>
+    </div>
+    <div>
+        <label for="phoneNumber">Phone Number</label>
+        <input type="text" id="phoneNumber" name="phoneNumber" required>
+    </div>
+    <div>
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+    </div>
+    <div>
+        <label for="deliveryAddress">Delivery Address</label>
+        <textarea id="deliveryAddress" name="deliveryAddress" required></textarea>
+    </div>
+    <div>
+        <label>Products in Cart</label>
+        <ul id="cart-summary"></ul>
+    </div>
+    <button type="submit">Submit Order</button>
+</form>
+
+<script>
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    document.getElementById('checkout-form').addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const formData = {
+            client: {
+                fio: document.getElementById('fullName').value,
+                number: document.getElementById('phoneNumber').value,
+                email: document.getElementById('email').value,
+                address: document.getElementById('deliveryAddress').value,
+            },
+            order: {
+                items: cart.map(item => ({
+                    productId: item.id,
+                    quantity: item.quantity
+                }))
+            }
+        };
+
+        try {
+            // console.log(JSON.stringify(formData));
+            const response = await fetch('http://localhost/api/v1/order/createOrder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+            alert(`Order created! Internal Track Number: ${result.internalTrackNumber}`);
+            localStorage.removeItem('cart');
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to create order.');
+        }
+    });
+
+    function displayCartSummary() {
+        const cartSummary = document.getElementById('cart-summary');
+        cartSummary.innerHTML = '';
+        cart.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item.name} x ${item.quantity}`;
+            cartSummary.appendChild(li);
+        });
+    }
+
+    displayCartSummary();
+</script>
+
+</body>
+</html>

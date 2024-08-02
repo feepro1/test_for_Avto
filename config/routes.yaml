@@ -1,3 +1,15 @@
-#index:
-#    path: /
-#    controller: App\Controller\DefaultController::index
+# Route for displaying products
+index:
+    path: /
+    controller: App\Controller\ProductsController::defAction
+
+# Route for creating an order
+#create_order:
+#    path: /api/v1/order/createOrder
+#    methods: POST
+#    controller: App\Controller\OrderController::createOrder
+
+#get_all_products:
+#    path: /api/v1/products/get-all-products
+#    methods: GET
+#    controller: App\Controller\ProductsController::getAllProducts

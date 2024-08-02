@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель Менеджера</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            overflow: hidden;
+        }
+        header {
+            background: #35424a;
+            color: #ffffff;
+            padding-top: 30px;
+            min-height: 70px;
+            border-bottom: #e8491d 3px solid;
+        }
+        header h1 {
+            text-align: center;
+            margin: 0;
+        }
+        table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+        th {
+            background-color: #35424a;
+            color: white;
+        }
+        .form-container {
+            background: #ffffff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            display: none;
+            margin: 20px 0;
+        }
+        .form-container input[type="text"], .form-container input[type="email"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+        }
+        .form-container button {
+            background: #35424a;
+            color: white;
+            border: 0;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .form-container button:hover {
+            background: #e8491d;
+        }
+        .action-buttons {
+            text-align: right;
+        }
+        .action-buttons button {
+            background: #35424a;
+            color: white;
+            border: 0;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .action-buttons button:hover {
+            background: #e8491d;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="container">
+        <h1>Панель Менеджера</h1>
+    </div>
+</header>
+<div class="container">
+    <h2>Заявки, Ожидающие обработки</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>ID Заявки</th>
+            <th>Клиент</th>
+            <th>Товары</th>
+            <th>Дата Создания</th>
+            <th>Статус</th>
+            <th>Действия</th>
+        </tr>
+        </thead>
+        <tbody id="ordersTableBody">
+        <!-- Здесь будут динамически добавляться строки заявок -->
+        </tbody>
+    </table>
+    <div class="form-container" id="shipmentFormContainer">
+        <h2>Отправка Заявки</h2>
+        <form id="shipmentForm">
+            <input type="hidden" id="orderId" name="orderId">
+            <label for="shippingCompany">Транспортная Компания</label>
+            <input type="text" id="shippingCompany" name="shippingCompany" required>
+            <label for="trackingNumber">Трек-номер</label>
+            <input type="text" id="trackingNumber" name="trackingNumber" required>
+            <div class="action-buttons">
+                <button type="button" onclick="cancelShipment()">Отменить</button>
+                <button type="submit">Отправить</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('http://localhost/api/v1/orders/pending-shipment')
+            .then(response => response.json())
+            .then(data => {
+                const ordersTableBody = document.getElementById('ordersTableBody');
+                data.forEach(order => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                            <td>${order.id}</td>
+                            <td>${order.client.fio}</td>
+                            <td>${order.items.map(item => item.productName + ' (x' + item.quantity + ')').join(', ')}</td>
+                            <td>${order.createdAt}</td>
+                            <td>${order.status}</td>
+                            <td><button onclick="prepareShipment(${order.id})">Отправить в ТК</button></td>
+                        `;
+                    ordersTableBody.appendChild(row);
+                });
+            });
+    });
+
+    function prepareShipment(orderId) {
+        document.getElementById('orderId').value = orderId;
+        document.getElementById('shipmentFormContainer').style.display = 'block';
+    }
+
+    function cancelShipment() {
+        document.getElementById('shipmentFormContainer').style.display = 'none';
+    }
+
+    document.getElementById('shipmentForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const orderId = document.getElementById('orderId').value;
+        const shippingCompany = document.getElementById('shippingCompany').value;
+        const trackingNumber = document.getElementById('trackingNumber').value;
+
+        fetch(`http://localhost/api/v1/orders/${orderId}/send-to-tk`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                shippingCompany,
+                trackingNumber
+            })
+        })
+            .then(response => {
+                if (response.ok) {
+                    alert('Заявка успешно отправлена');
+                    location.reload();
+                } else {
+                    alert('Ошибка при отправке заявки');
+                }
+            });
+    });
+</script>
+</body>
+</html>
