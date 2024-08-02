@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-  # PHP and Symfony service
   app:
     build:
       context: .
@@ -14,16 +13,14 @@ services:
     depends_on:
       - db_postgresql
     environment:
-      DATABASE_URL_PGSQL: "pgsql://postgres:postgres@db_postgresql:5432/db"
+      - APP_ENV=dev
+      - DATABASE_URL_PGSQL=pgsql://postgres:postgres@db_postgresql:5432/db
     command: >
       sh -c "
         php bin/console doctrine:migrations:migrate --no-interaction &&
         php bin/console doctrine:fixtures:load --no-interaction &&
         php-fpm
       "
-  #        DATABASE_URL_PGSQL: "postgres://postgres:postgres@127.0.0.1:5432/db?sslmode=disable&charset=utf8&serverVersion=16.3"
-#    command: composer install && psalm
-
 
   db_postgresql:
     container_name: db_postgresql
@@ -33,11 +30,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
-#    ports:
-#      - "5432:5432"
     networks:
       - app-network
-
 
   web:
     image: nginx:latest
@@ -52,7 +46,7 @@ services:
     depends_on:
       - app
 
-  # PHP testing service
+#   PHP testing service
   phpunit:
     image: php:7.4-cli
     container_name: phpunit
